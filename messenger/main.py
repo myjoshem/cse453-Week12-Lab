@@ -11,6 +11,7 @@
 
 from os import path
 import interact, messages
+from test_bell_lapadula import TestMethods
 
 # Gets the absolute path of the "messages.txt" file
 FILE_NAME = path.join(path.dirname(path.abspath(__file__)), "messages.txt")
@@ -33,7 +34,8 @@ def display_options():
           "\ts .. Show one message\n" +
           "\ta .. Add a new message\n" + 
           "\tu .. Update an existing message\n" + 
-          "\tr .. Delete an existing message\n" + 
+          "\tr .. Delete an existing message\n" +
+          "\tt .. Run tests\n" +  # Added this line
           "\to .. Display this list of options\n" + 
           "\tl .. Log out\n")
 
@@ -61,6 +63,8 @@ def session(messages):
     display_options()
     interact_.display()
 
+    test_methods = TestMethods(messages)  # Initialize the TestMethods class
+
     options = {
         "o": "print('Options:'); display_options();",
         "d": "interact_.display();",
@@ -68,6 +72,7 @@ def session(messages):
         "a": "interact_.add();",
         "u": "interact_.update();",
         "r": "interact_.remove();",
+        "t": "test_methods.run_all_tests();",  # Add a new option for testing
         "l": "print(f'Goodbye, {username}{chr(10)}'); close_session();"
     }
 

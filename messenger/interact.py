@@ -46,15 +46,12 @@ class Interact:
     # Authenticate the user and get him/her all set up
     ##################################################
     def __init__(self, username, password, messages):
-        self._authenticate(username, password)
         self._username = username
         self._p_messages = messages
-
-         # Retrieve the user's security level from Control
+        if not self._authenticate(username, password):
+            print("ERROR: Authentication failed!")
+            raise ValueError("Invalid credentials")  # Ensure this is raised
         self._security_level = Control.get_user_security_level(username)
-
-        # Print user security level for debugging (optional)
-        print(f"User '{username}' authenticated with security level: {self._security_level}")
     
 
     ##################################################
@@ -77,7 +74,7 @@ class Interact:
     ################################################## 
     def display(self):
         """Delegate the display of messages to the Messages class."""
-        print("Messages:")
+        print("To select a single message from the list, enter 's' at the prompt and hit enter, then enter the id# of the message from the list")
         self._p_messages.display(self._security_level)  # Pass the user's security level
         print()  # Add a blank line for better formatting
 

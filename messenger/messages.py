@@ -54,7 +54,7 @@ class Messages:
                 if not Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
                     return "ACCESS_DENIED"
                 m.display_text()
-                return True
+                return "SUCCESS"
         return "NOT_FOUND"
 
     ##################################################
@@ -62,14 +62,14 @@ class Messages:
     # Update a single message
     ################################################## 
     def update(self, id_, new_text, user_level):
-        """Update a message if the user has read privileges."""
+        """Update a message if the user has write privileges."""
         for m in self._messages:
             if m.get_id() == id_:
-                # Check read access
-                if not Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                # Check write access
+                if not Control.has_write_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
                     return "ACCESS_DENIED"
                 m.update_text(new_text)
-                return True
+                return "SUCCESS"
         return "NOT_FOUND"
 
     ##################################################
@@ -77,14 +77,14 @@ class Messages:
     # Remove a single message
     ################################################## 
     def remove(self, id_, user_level):
-        """Remove a single message if the user has read privileges."""
+        """Remove a single message if the user has write privileges."""
         for m in self._messages:
             if m.get_id() == id_:
-                # Check read access
-                if not Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                # Check write access
+                if not Control.has_write_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
                     return "ACCESS_DENIED"
-                m.clear()
-                return "DELETED"
+                self._messages.remove(m)  # Fully remove the message instead of clearing it
+                return "SUCCESS"
         return "NOT_FOUND"
 
     ##################################################
@@ -92,8 +92,14 @@ class Messages:
     # Add a new message
     ################################################## 
     def add(self, text_control, text, author, date):
+        """Add a new message with a security level."""
+        message_level = Control.SECURITY_LEVELS[text_control]
+        if not Control.has_write_privileges(Control.get_user_security_level(author), message_level):
+            print("ACCESS DENIED: You do not have sufficient clearance to create this message.")
+            return "ACCESS_DENIED"
         m = message.Message(text_control, text, author, date)
         self._messages.append(m)
+        return "SUCCESS"
 
     ##################################################
     # MESSAGES :: READ MESSAGES
@@ -103,9 +109,10 @@ class Messages:
         try:
             with open(filename, "r") as f:
                 for line in f:
-                    text_control, author, date, text = line.split('|')
-                    self.add(text_control, text.rstrip('\r\n'), author, date)
-
+                    try:
+                        text_control, author, date, text = line.split('|')
+                        self.add(text_control, text.rstrip('\r\n'), author, date)
+                    except ValueError:
+                        print(f"ERROR: Malformed line in {filename}: {line}")
         except FileNotFoundError:
             print(f"ERROR! Unable to open file \"{filename}\"")
-            return
