@@ -7,7 +7,8 @@
 #    This class allows one user to interact with the system
 ########################################################################
 
-import messages, control
+import messages
+from control import Control
 
 ###############################################################
 # USER
@@ -49,14 +50,25 @@ class Interact:
         self._username = username
         self._p_messages = messages
 
+         # Retrieve the user's security level from Control
+        self._security_level = Control.get_user_security_level(username)
+
+        # Print user security level for debugging (optional)
+        print(f"User '{username}' authenticated with security level: {self._security_level}")
+    
+
     ##################################################
     # INTERACT :: SHOW
     # Show a single message
     ##################################################
     def show(self):
         id_ = self._prompt_for_id("display")
-        if not self._p_messages.show(id_):
-            print(f"ERROR! Message ID \'{id_}\' does not exist")
+        # Attempt to display the message
+        result = self._p_messages.show(id_, self._security_level)
+        if result == "NOT_FOUND":
+            print(f"ERROR! Message ID '{id_}' does not exist.")
+        elif result == "ACCESS_DENIED":
+            print(f"ACCESS DENIED! You do not have sufficient clearance to view message ID '{id_}'.")
         print()
 
     ##################################################
@@ -64,18 +76,52 @@ class Interact:
     # Display the set of messages
     ################################################## 
     def display(self):
+        """Delegate the display of messages to the Messages class."""
         print("Messages:")
-        self._p_messages.display()
-        print()
+        self._p_messages.display(self._security_level)  # Pass the user's security level
+        print()  # Add a blank line for better formatting
 
     ##################################################
     # INTERACT :: ADD
     # Add a single message
     ################################################## 
     def add(self):
-        self._p_messages.add(self._prompt_for_line("message"),
-                             self._username,
-                             self._prompt_for_line("date"))
+        # Display available levels for selection
+        print("Select a security level for your message:")
+        available_levels = [
+            (level_name, level_value)
+            for level_name, level_value in Control.SECURITY_LEVELS.items()
+            if Control.has_write_privileges(self._security_level, level_value)
+        ]
+        
+        for i, (level_name, _) in enumerate(available_levels, start=1):
+            print(f"{i}. {level_name}")
+        
+        # Prompt user for their selection
+        try:
+            selection = int(input("Enter the number corresponding to the security level: ")) - 1
+            if selection < 0 or selection >= len(available_levels):
+                raise ValueError
+        except ValueError:
+            print("ERROR: Invalid selection. Please try again.")
+            return
+
+        # Retrieve the selected security level
+        selected_level = available_levels[selection][0]  # This applies to the message, not the user
+
+        # Warn the user if they may lose access
+        if Control.SECURITY_LEVELS[selected_level] > self._security_level:
+            print(f"WARNING: You may not be able to access this message later because it is at a higher level than your current clearance ({selected_level}).")
+        
+        # Add the message
+        self._p_messages.add(
+            selected_level,  # Security level of the message
+            self._prompt_for_line("message"),
+            self._username,
+            self._prompt_for_line("date"),
+        )
+        print("Message successfully added.")
+
 
     ##################################################
     # INTERACT :: UPDATE
@@ -83,10 +129,19 @@ class Interact:
     ################################################## 
     def update(self):
         id_ = self._prompt_for_id("update")
-        if not self._p_messages.show(id_):
-            print(f"ERROR! Message ID \'{id_}\' does not exist\n")
+        # Attempt to show the message for updating
+        result = self._p_messages.show(id_, self._security_level)
+        if result == "NOT_FOUND":
+            print(f"ERROR! Message ID '{id_}' does not exist.")
             return
-        self._p_messages.update(id_, self._prompt_for_line("message"))
+        elif result == "ACCESS_DENIED":
+            print(f"ACCESS DENIED! You do not have sufficient clearance to update message ID '{id_}'.")
+            return
+
+        # Update the message content
+        new_text = self._prompt_for_line("updated message content")
+        self._p_messages.update(id_, new_text, self._security_level)
+        print(f"Message ID '{id_}' successfully updated.")
         print()
             
     ##################################################
@@ -94,7 +149,16 @@ class Interact:
     # Remove one message from the list
     ################################################## 
     def remove(self):
-        self._p_messages.remove(self._prompt_for_id("delete"))
+        id_ = self._prompt_for_id("delete")
+        # Attempt to remove the message
+        result = self._p_messages.remove(id_, self._security_level)
+        if result == "NOT_FOUND":
+            print(f"ERROR! Message ID '{id_}' does not exist.")
+        elif result == "ACCESS_DENIED":
+            print(f"ACCESS DENIED! You do not have sufficient clearance to delete message ID '{id_}'.")
+        else:
+            print(f"Message ID '{id_}' successfully deleted.")
+        print()
 
     ##################################################
     # INTERACT :: PROMPT FOR LINE

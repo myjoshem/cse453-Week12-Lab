@@ -23,6 +23,7 @@ class Message:
     # Set a message to empty
     ##################################################
     def __init__(self):
+        self._text_control = "Public"  # Default security level for empty messages
         self._empty = True
         self._text = "Empty"
         self._author = ""
@@ -34,13 +35,14 @@ class Message:
     # MESSAGE NON-DEFAULT CONSTRUCTOR
     # Create a message and fill it
     ##################################################   
-    def __init__(self, text, author, date):
-        self._text = text
-        self._author = author
-        self._date = date
-        self._id = Message._id_next
+    def __init__(self, text_control, text, author, date):
+        self._text_control = text_control  # Security level (e.g., "Confidential")
+        self._text = text  # Message content
+        self._author = author  # Author of the message
+        self._date = date  # Date of the message
+        self._id = Message._id_next  # Auto-assign unique ID
         Message._id_next += 1
-        self._empty = False
+        self._empty = False  # Mark the message as non-empty
 
     ##################################################
     # MESSAGE :: GET ID
@@ -57,7 +59,7 @@ class Message:
     def display_properties(self):
         if self._empty:
             return
-        print(f"\t[{self._id}] Message from {self._author} at {self._date}")
+        print(f"\t{self._id} [{self._text_control.upper()}] Message from {self._author} at {self._date}")
 
     ##################################################
     # MESSAGE :: DISPLAY TEXT
@@ -82,3 +84,4 @@ class Message:
         self._author = ""
         self._date = ""
         self._empty = True
+        self._text_control = ""

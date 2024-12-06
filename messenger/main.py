@@ -57,7 +57,9 @@ def session(messages):
 
     interact_ = interact.Interact(username, password, messages)
     print(f"\nWelcome, {username}. Please select an option:\n")
+
     display_options()
+    interact_.display()
 
     options = {
         "o": "print('Options:'); display_options();",

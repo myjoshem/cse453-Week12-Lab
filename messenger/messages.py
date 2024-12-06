@@ -7,7 +7,8 @@
 #    This class stores the notion of a collection of messages
 ########################################################################
 
-import control, message
+import message
+from control import Control
 
 ##################################################
 # MESSAGES
@@ -27,45 +28,71 @@ class Messages:
     # MESSAGES :: DISPLAY
     # Display the list of messages
     ################################################## 
-    def display(self):
+    def display(self, user_level):
+        """Display the list of messages the user has read privileges for."""
+        print("Messages you have access to:")
+        has_access = False  # Flag to track if any messages are accessible
         for m in self._messages:
-            m.display_properties()
+            # Check if the user has read access to the message
+            if Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                m.display_properties()  # Display the message's metadata (ID, author, date, security level)
+                has_access = True
+
+        if not has_access:
+            print("No messages available at your clearance level.")
+        print()  # Add an empty line for better formatting
 
     ##################################################
     # MESSAGES :: SHOW
     # Show a single message
     ################################################## 
-    def show(self, id):
+    def show(self, id_, user_level):
+        """Show a single message if the user has read privileges."""
         for m in self._messages:
-            if m.get_id() == id:
+            if m.get_id() == id_:
+                # Check read access
+                if not Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                    return "ACCESS_DENIED"
                 m.display_text()
                 return True
-        return False
+        return "NOT_FOUND"
 
     ##################################################
     # MESSAGES :: UPDATE
     # Update a single message
     ################################################## 
-    def update(self, id, text):
+    def update(self, id_, new_text, user_level):
+        """Update a message if the user has read privileges."""
         for m in self._messages:
-            if m.get_id() == id:
-                m.update_text(text)
+            if m.get_id() == id_:
+                # Check read access
+                if not Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                    return "ACCESS_DENIED"
+                m.update_text(new_text)
+                return True
+        return "NOT_FOUND"
 
     ##################################################
     # MESSAGES :: REMOVE
     # Remove a single message
     ################################################## 
-    def remove(self, id):
+    def remove(self, id_, user_level):
+        """Remove a single message if the user has read privileges."""
         for m in self._messages:
-            if m.get_id() == id:
+            if m.get_id() == id_:
+                # Check read access
+                if not Control.has_read_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                    return "ACCESS_DENIED"
                 m.clear()
+                return "DELETED"
+        return "NOT_FOUND"
 
     ##################################################
     # MESSAGES :: ADD
     # Add a new message
     ################################################## 
-    def add(self, text, author, date):
-        m = message.Message(text, author, date)
+    def add(self, text_control, text, author, date):
+        m = message.Message(text_control, text, author, date)
         self._messages.append(m)
 
     ##################################################
@@ -77,7 +104,7 @@ class Messages:
             with open(filename, "r") as f:
                 for line in f:
                     text_control, author, date, text = line.split('|')
-                    self.add(text.rstrip('\r\n'), author, date)
+                    self.add(text_control, text.rstrip('\r\n'), author, date)
 
         except FileNotFoundError:
             print(f"ERROR! Unable to open file \"{filename}\"")
