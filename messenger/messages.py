@@ -62,14 +62,20 @@ class Messages:
     # Update a single message
     ################################################## 
     def update(self, id_, new_text, user_level):
-        """Update a message if the user has write privileges."""
+        """Update a message if the user has update privileges."""
         for m in self._messages:
             if m.get_id() == id_:
-                # Check write access
-                if not Control.has_write_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                # Get the message's security level
+                message_level = Control.SECURITY_LEVELS[m._text_control]
+
+                # Check update privileges (no edit up or down)
+                if Control.check_update_privileges(user_level, message_level) == "ACCESS_DENIED":
                     return "ACCESS_DENIED"
+                
+                # Perform the update operation
                 m.update_text(new_text)
                 return "SUCCESS"
+
         return "NOT_FOUND"
 
     ##################################################
@@ -77,14 +83,20 @@ class Messages:
     # Remove a single message
     ################################################## 
     def remove(self, id_, user_level):
-        """Remove a single message if the user has write privileges."""
+        """Remove a single message if the user has update privileges."""
         for m in self._messages:
             if m.get_id() == id_:
-                # Check write access
-                if not Control.has_write_privileges(user_level, Control.SECURITY_LEVELS[m._text_control]):
+                # Get the message's security level
+                message_level = Control.SECURITY_LEVELS[m._text_control]
+                
+                # Check update privileges (no edit up or down)
+                if Control.check_update_privileges(user_level, message_level) == "ACCESS_DENIED":
                     return "ACCESS_DENIED"
-                self._messages.remove(m)  # Fully remove the message instead of clearing it
+                
+                # Perform the remove operation
+                self._messages.remove(m)
                 return "SUCCESS"
+
         return "NOT_FOUND"
 
     ##################################################

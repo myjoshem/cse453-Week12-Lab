@@ -43,3 +43,14 @@ class Control:
     def has_write_privileges(user_level, message_level):
         """Check if the user has write privileges (No Write Down)."""
         return user_level <= message_level
+    
+    @staticmethod
+    def check_update_privileges(user_level, message_level):
+        """
+        Check if the user has privileges to update or delete a specific message.
+        - User level must match the message level (no editing up or down).
+        """
+        # Prevent editing up or down (user level must match message level)
+        if user_level != message_level:
+            return "ACCESS_DENIED"
+        return "SUCCESS"

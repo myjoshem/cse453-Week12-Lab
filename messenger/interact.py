@@ -126,16 +126,18 @@ class Interact:
     ################################################## 
     def update(self):
         id_ = self._prompt_for_id("update")
-        # Attempt to show the message for updating
-        result = self._p_messages.show(id_, self._security_level)
+        
+        # Check if the user has access to update the message
+        result = self._p_messages.update(id_, None, self._security_level)
+        
         if result == "NOT_FOUND":
             print(f"ERROR! Message ID '{id_}' does not exist.")
             return
         elif result == "ACCESS_DENIED":
             print(f"ACCESS DENIED! You do not have sufficient clearance to update message ID '{id_}'.")
             return
-
-        # Update the message content
+        
+        # If access is allowed, prompt for the updated content
         new_text = self._prompt_for_line("updated message content")
         self._p_messages.update(id_, new_text, self._security_level)
         print(f"Message ID '{id_}' successfully updated.")
@@ -147,8 +149,10 @@ class Interact:
     ################################################## 
     def remove(self):
         id_ = self._prompt_for_id("delete")
-        # Attempt to remove the message
+        
+        # Check if the user has the required access to remove the message
         result = self._p_messages.remove(id_, self._security_level)
+        
         if result == "NOT_FOUND":
             print(f"ERROR! Message ID '{id_}' does not exist.")
         elif result == "ACCESS_DENIED":
